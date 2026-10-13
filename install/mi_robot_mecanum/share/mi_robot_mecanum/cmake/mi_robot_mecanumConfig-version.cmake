@@ -1,1 +1,0 @@
-/home/charly/ros2_ws_mecanum/build/mi_robot_mecanum/ament_cmake_core/mi_robot_mecanumConfig-version.cmake
