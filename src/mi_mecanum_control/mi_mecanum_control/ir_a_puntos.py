@@ -20,7 +20,10 @@ from rclpy.node import Node
 
 # ===== TODO: puntos de SU variante: (x [m], y [m], θ [rad]) =====
 PUNTOS = [
-    # (x, y, theta),
+    (2.5, 0.0, math.pi / 2),
+    (2.5, 1.0, math.pi / 2),
+    (0.0, 1.0, -math.pi / 2),
+    (0.0, 0.0, 0.0),
 ]
 
 L1, L2, L3 = 1.0, 1.0, 1.5     # Λ = diag(λ1, λ2, λ3)
@@ -42,11 +45,24 @@ def ley_control(pose, meta):
     pose = (x, y, φ)      meta = (xd, yd, θd)
     Devuelve (u, v, r, alcanzado)
     """
-    # TODO 1: errores de posición (en odom) y de orientación (envuelto)
-    # TODO 2: ¿alcanzado? (TOL_POS y TOL_ANG) -> devolver 0, 0, 0, True
-    # TODO 3: ξ = J(φ)⁺ Λ e
-    # TODO 4: saturar la NORMA de (u, v) a V_MAX conservando la dirección, y |r| a R_MAX
-    raise NotImplementedError
+    x, y, phi = pose
+    xd, yd, thd = meta
+
+    ex, ey = xd - x, yd - y
+    eth = envolver(thd - phi)
+
+    if math.hypot(ex, ey) < TOL_POS and abs(eth) < TOL_ANG:
+        return 0.0, 0.0, 0.0, True
+
+    u = math.cos(phi) * L1 * ex + math.sin(phi) * L2 * ey
+    v = -math.sin(phi) * L1 * ex + math.cos(phi) * L2 * ey
+    r = L3 * eth
+
+    norma = math.hypot(u, v)
+    if norma > V_MAX:
+        u, v = u * V_MAX / norma, v * V_MAX / norma
+    r = max(-R_MAX, min(R_MAX, r))
+    return u, v, r, False
 
 
 class IrAPuntos(Node):
